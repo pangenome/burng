@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # brrrrrn-ing
-prefix=chr8.pan+refs.fa.pggb-W-s100000-l300000-p98-n20-a0-K16.seqwish-k47-B20000000.smooth-w200000-j10000-e10000-I0.95-R0.1-p1_7_11_2_33_1
+prefix=chr8.pan+refs.fa.pggb-W-s100000-l300000-p98-n20-a0-K16.seqwish-k127-B20000000.smooth-w200000-j100-e100000-I0.95-R0.05-p1_7_11_2_33_1
 
 # Take consensus path names
 odgi paths -i $prefix.og -L | grep ^Cons >$prefix.consensus_path_names.txt
