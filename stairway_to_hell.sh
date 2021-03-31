@@ -23,15 +23,15 @@ odgi build -g $prefix.consensus@10000__y_0_1000000.gfa -o $prefix.consensus@1000
 odgi paths -i $prefix.consensus@10000__y_0_1000000.og -L |
   grep ^Link | awk '{ print NR":"$0 }' |
   grep -f <(
-    cat consensus_path_names.touched.txt
+    #cat $prefix.consensus_path_names.touched.txt
     odgi paths -i $prefix.consensus@10000__y_0_1000000.og -L |
-    grep ^Link | grep -n -o -Ff <($prefix.consensus_path_names.depth.10_500.tsv | cut -f 1) |
+    grep ^Link | grep -n -o -Ff <(cut -f 1 $prefix.consensus_path_names.depth.10_500.tsv) |
     cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
   ) |
     cut -f 2 -d : >$prefix.link_paths.to_extract.txt
 
 # Put it all together
-cat <(cat $prefix.consensus_path_names.depth.10_500.tsv | cut -f 1) \
+cat <(cut -f 1 $prefix.consensus_path_names.depth.10_500.tsv) \
   $prefix.link_paths.to_extract.txt \
   $prefix.consensus_path_names.touched.txt |
   sort | uniq | awk 'NF > 0' >$prefix.consensus_path_names.to_extract.txt
