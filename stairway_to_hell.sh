@@ -3,11 +3,14 @@
 # brrrrrn-ing
 prefix=chr8.pan+refs.fa.pggb-W-s100000-l300000-p98-n20-a0-K16.seqwish-k47-B20000000.smooth-w200000-j10000-e10000-I0.95-R0.1-p1_7_11_2_33_1
 
+# Take all path names
+odgi paths -i $prefix.og -L >$prefix.all_path_names.txt
+
 # Take consensus path names
-odgi paths -i $prefix.og -L | grep ^Cons >$prefix.consensus_path_names.txt
+grep ^Cons $prefix.all_path_names.txt >$prefix.consensus_path_names.txt
 
 # Take original path names
-odgi paths -i $prefix.og -L | grep ^Cons -v >$prefix.original_path_names.txt
+grep ^Cons -v $prefix.all_path_names.txt >$prefix.original_path_names.txt
 
 # Calculate the depth
 odgi depth -i $prefix.og -s $prefix.original_path_names.txt -R $prefix.consensus_path_names.txt -t 16 >$prefix.consensus_path_names.depth.tsv
@@ -20,12 +23,13 @@ odgi overlap -i $prefix.og -s $prefix.consensus_path_names.txt -b <(grep chr8 $p
 
 # Take the link paths between consensus paths that we're saving
 odgi build -g $prefix.consensus@10000__y_0_1000000.gfa -o $prefix.consensus@10000__y_0_1000000.og -t 16
-odgi paths -i $prefix.consensus@10000__y_0_1000000.og -L |
-  grep ^Link | awk '{ print NR":"$0 }' |
+
+odgi paths -i $prefix.consensus@10000__y_0_1000000.og -L >$prefix.consensus@10000__y_0_1000000.path_names.txt
+
+grep ^Link $prefix.consensus@10000__y_0_1000000.path_names.txt | awk '{ print NR":"$0 }' |
   grep -f <(
     #cat $prefix.consensus_path_names.touched.txt
-    odgi paths -i $prefix.consensus@10000__y_0_1000000.og -L |
-    grep ^Link | grep -n -o -Ff <(cut -f 1 $prefix.consensus_path_names.depth.10_500.tsv) |
+    grep ^Link $prefix.consensus@10000__y_0_1000000.path_names.txt | grep -n -o -Ff <(cut -f 1 $prefix.consensus_path_names.depth.10_500.tsv) |
     cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
   ) |
     cut -f 2 -d : >$prefix.link_paths.to_extract.txt
