@@ -4,17 +4,22 @@
 set -eo pipefail
 
 # brrrrrn-ing
-prefix=$1
-min_depth=$2
-max_depth=$3
+#prefix=$1
+source_gfa=$1
+target_gfa=$2
+min_depth=$3
+max_depth=$4
+
+prefix=$(basename $source_gfa .gfa)
+target=$(basename $target_gfa .gfa)
 
 echo "Build the graphs"
 if [[ ! -s "$prefix".og ]]; then
   odgi build -g "$prefix".gfa -o "$prefix".og -t 16 -P
 fi
 
-if [[ ! -s "$prefix".consensus@10000__y_0_1000000.og ]]; then
-  odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16 -P
+if [[ ! -s "$target".og ]]; then
+  odgi build -g "$target".gfa -o "$target".og -t 16 -P
 fi
 
 echo "Take all path names"
@@ -44,15 +49,14 @@ echo "Take the paths touched by the references"
 odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep chr8 "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
 
 echo "Take the link paths between consensus paths that we're saving"
-odgi paths -i "$prefix".consensus@10000__y_0_1000000.og -L >"$prefix".consensus@10000__y_0_1000000.path_names.txt
+odgi paths -i "$target".og -L >"$target".path_names.txt
 
-grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | awk '{ print NR":"$0 }' |
+grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' | \
   grep -f <(
     cat "$prefix".consensus_path_names.touched.txt
-    grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) |
-    cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
-  ) |
-    cut -f 2 -d : >"$prefix".link_paths.to_extract.txt
+    grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) | 
+        cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} ' 
+  ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
 
 echo "Put it all together"
 cat <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) \
@@ -61,16 +65,16 @@ cat <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) 
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
 
 echo "Extract"
-if [[ ! -s "$prefix".consensus@10000__y_0_1000000.chop100.og ]]; then
-    odgi chop -i "$prefix".consensus@10000__y_0_1000000.og -o "$prefix".consensus@10000__y_0_1000000.chop100.og -c 100 -t 16
+if [[ ! -s "$target".chop100.og ]]; then
+    odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t 16
 fi
-odgi extract -i "$prefix".consensus@10000__y_0_1000000.chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$prefix".consensus@10000__y_0_1000000.brned.og
+odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".brned.og
 
 echo "Get the GFA for Bandage"
-odgi view -i "$prefix".consensus@10000__y_0_1000000.brned.og -g >"$prefix".consensus@10000__y_0_1000000.brned.gfa
+odgi view -i "$target".brned.og -g >"$target".brned.gfa
 
 #echo "Bandage"
 #Bandage image "$prefix".consensus@10000__y_0_1000000.brned.gfa "$prefix".consensus@10000__y_0_1000000.brned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
 
 echo "Explode"
-rm -rf bomb; mkdir bomb; odgi explode -i "$prefix".consensus@10000__y_0_1000000.brned.og -p bomb/brned -t 16
+rm -rf bomb; mkdir bomb; odgi explode -i "$target".brned.og -p bomb/brned -t 16
