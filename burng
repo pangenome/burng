@@ -54,7 +54,6 @@ echo "Take the link paths between consensus paths that we're saving"
 odgi paths -i "$target".og -L >"$target".path_names.txt
 
 if [[ $target_type == "consensus" ]]; then
-    echo "here!"
     grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' | \
         grep -f <(
             cat "$prefix".consensus_path_names.touched.txt
@@ -62,7 +61,6 @@ if [[ $target_type == "consensus" ]]; then
                 cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} ' 
         ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
 elif [[ $target_type == "full" ]]; then
-    echo "thar!"
     grep $ref_selector "$prefix".original_path_names.txt >"$target".link_paths.to_extract.txt
 fi
 
@@ -73,10 +71,14 @@ cat <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) 
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
 
 echo "Extract"
-if [[ ! -s "$target".chop100.og ]]; then
-    odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t 16
+if [[ $target_type == "consensus" ]]; then
+    if [[ ! -s "$target".chop100.og ]]; then
+        odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t 16
+    fi
+    odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".brned.og
+elif [[ $target_type == "full" ]]; then
+    odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o "$target".brned.og
 fi
-odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".brned.og
 
 echo "Get the GFA for Bandage"
 odgi view -i "$target".brned.og -g >"$target".brned.gfa
