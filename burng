@@ -59,7 +59,9 @@ cat <(cut -f 1 "$prefix".consensus_path_names.depth.10_500.tsv) \
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
 
 echo "Extract"
-odgi chop -i "$prefix".consensus@10000__y_0_1000000.og -o "$prefix".consensus@10000__y_0_1000000.chop100.og -c 100 -t 16
+if [[ ! -s "$prefix".consensus@10000__y_0_1000000.chop100.og ]]; then
+    odgi chop -i "$prefix".consensus@10000__y_0_1000000.og -o "$prefix".consensus@10000__y_0_1000000.chop100.og -c 100 -t 16
+fi
 odgi extract -i "$prefix".consensus@10000__y_0_1000000.chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$prefix".consensus@10000__y_0_1000000.brned.og
 
 echo "Get the GFA for Bandage"
