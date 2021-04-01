@@ -12,7 +12,7 @@ if [[ ! -s "$prefix".og ]]; then
 fi
 
 if [[ ! -s "$prefix".consensus@10000__y_0_1000000.og ]]; then
-  odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16
+  odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16 -P
 fi
 
 echo "Take all path names"
