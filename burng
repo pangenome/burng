@@ -4,8 +4,13 @@
 prefix=$1
 
 # Build graphs
-odgi build -g "$prefix".gfa -o "$prefix".og -t 16
-odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16
+if [[ ! -s "$prefix".og ]]; then
+  odgi build -g "$prefix".gfa -o "$prefix".og -t 16
+fi
+
+if [[ ! -s "$prefix".consensus@10000__y_0_1000000.og ]]; then
+  odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16
+fi
 
 # Take all path names
 odgi paths -i "$prefix".og -L >"$prefix".all_path_names.txt
