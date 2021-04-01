@@ -32,7 +32,7 @@ if [[ ! -s "$prefix".consensus_path_names.depth.tsv ]]; then
   odgi depth -i "$prefix".og -s "$prefix".original_path_names.txt -R "$prefix".consensus_path_names.txt -t 16 >"$prefix".consensus_path_names.depth.tsv
 fi
 
-echo " Remove artifacts and dark matter"
+echo "Remove artifacts and dark matter"
 awk '$4 >= 10 && $4 <= 500' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.10_500.tsv
 
 echo "Take the paths touched by the references"
@@ -43,7 +43,7 @@ odgi paths -i "$prefix".consensus@10000__y_0_1000000.og -L >"$prefix".consensus@
 
 grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | awk '{ print NR":"$0 }' |
   grep -f <(
-    #cat "$prefix".consensus_path_names.touched.txt
+    cat "$prefix".consensus_path_names.touched.txt
     grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.10_500.tsv) |
     cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
   ) |
