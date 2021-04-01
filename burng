@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# exit when any command fails
+set -eo pipefail
+
 # brrrrrn-ing
 prefix=$1
 
 # Build graphs
-odgi build -g "$prefix".gfa -o "$prefix".og -t 16
-odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16
+odgi build -g "$prefix".gfa -o "$prefix".og -t 16 -P
+odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16 -P
 
 # Take all path names
 odgi paths -i "$prefix".og -L >"$prefix".all_path_names.txt
@@ -30,7 +33,7 @@ odgi paths -i "$prefix".consensus@10000__y_0_1000000.og -L >"$prefix".consensus@
 
 grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | awk '{ print NR":"$0 }' |
   grep -f <(
-    #cat "$prefix".consensus_path_names.touched.txt
+    cat "$prefix".consensus_path_names.touched.txt
     grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.10_500.tsv) |
     cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
   ) |
