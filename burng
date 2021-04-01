@@ -5,6 +5,8 @@ set -eo pipefail
 
 # brrrrrn-ing
 prefix=$1
+min_depth=$2
+max_depth=$3
 
 echo "Build the graphs"
 if [[ ! -s "$prefix".og ]]; then
@@ -36,7 +38,7 @@ if [[ ! -s "$prefix".consensus_path_names.depth.tsv ]]; then
 fi
 
 echo "Remove artifacts and dark matter"
-awk '$4 >= 10 && $4 <= 500' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.10_500.tsv
+awk '$4 >= '$min_depth' && $4 <= '$max_depth'' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv
 
 echo "Take the paths touched by the references"
 odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep chr8 "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
@@ -47,13 +49,13 @@ odgi paths -i "$prefix".consensus@10000__y_0_1000000.og -L >"$prefix".consensus@
 grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | awk '{ print NR":"$0 }' |
   grep -f <(
     cat "$prefix".consensus_path_names.touched.txt
-    grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.10_500.tsv) |
+    grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) |
     cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
   ) |
     cut -f 2 -d : >"$prefix".link_paths.to_extract.txt
 
 echo "Put it all together"
-cat <(cut -f 1 "$prefix".consensus_path_names.depth.10_500.tsv) \
+cat <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) \
   "$prefix".link_paths.to_extract.txt \
   "$prefix".consensus_path_names.touched.txt |
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
@@ -67,5 +69,8 @@ odgi extract -i "$prefix".consensus@10000__y_0_1000000.chop100.og -b "$prefix".c
 echo "Get the GFA for Bandage"
 odgi view -i "$prefix".consensus@10000__y_0_1000000.brned.og -g >"$prefix".consensus@10000__y_0_1000000.brned.gfa
 
-echo "Bandage"
-Bandage image "$prefix".consensus@10000__y_0_1000000.brned.gfa "$prefix".consensus@10000__y_0_1000000.brned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
+#echo "Bandage"
+#Bandage image "$prefix".consensus@10000__y_0_1000000.brned.gfa "$prefix".consensus@10000__y_0_1000000.brned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
+
+echo "Explode"
+rm -rf bomb; mkdir bomb; odgi explode -i "$prefix".consensus@10000__y_0_1000000.brned.og -p bomb/brned -t 16
