@@ -1,2 +1,3 @@
-# burn
-Removing complex regions from pangenome graphs
+# burng
+
+Removing complex regions from pangenome graphs.
