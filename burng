@@ -46,7 +46,7 @@ if [[ ! -s "$prefix".consensus_path_names.depth.tsv ]]; then
 fi
 
 echo "Remove artifacts and dark matter"
-awk '$4 >= '$min_depth' && $4 <= '$max_depth'' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv
+awk '$4 >= '"$min_depth"' && $4 <= '"$max_depth"'' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".tsv
 
 echo "Take the paths touched by the references"
 odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep "$ref_selector" "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
@@ -58,15 +58,15 @@ if [[ $target_type == "consensus" ]]; then
     grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' | \
         grep -f <(
             cat "$prefix".consensus_path_names.touched.txt
-            grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) | 
+            grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".tsv) |
                 cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} ' 
         ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
 elif [[ $target_type == "full" ]]; then
-    grep $ref_selector "$prefix".original_path_names.txt >"$target".link_paths.to_extract.txt
+    grep "$ref_selector" "$prefix".original_path_names.txt >"$target".link_paths.to_extract.txt
 fi
 
 echo "Put it all together"
-cat <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) \
+cat <(cut -f 1 "$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".tsv) \
   "$target".link_paths.to_extract.txt \
   "$prefix".consensus_path_names.touched.txt |
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
