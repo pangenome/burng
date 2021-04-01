@@ -9,6 +9,8 @@ source_gfa=$1
 target_gfa=$2
 min_depth=$3
 max_depth=$4
+ref_selector=$5
+target_type=$6
 
 prefix=$(basename $source_gfa .gfa)
 target=$(basename $target_gfa .gfa)
@@ -46,21 +48,27 @@ echo "Remove artifacts and dark matter"
 awk '$4 >= '$min_depth' && $4 <= '$max_depth'' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv
 
 echo "Take the paths touched by the references"
-odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep chr8 "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
+odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep $ref_selector "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
 
 echo "Take the link paths between consensus paths that we're saving"
 odgi paths -i "$target".og -L >"$target".path_names.txt
 
-grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' | \
-  grep -f <(
-    cat "$prefix".consensus_path_names.touched.txt
-    grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) | 
-        cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} ' 
-  ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
+if [[ $target_type == "consensus" ]]; then
+    echo "here!"
+    grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' | \
+        grep -f <(
+            cat "$prefix".consensus_path_names.touched.txt
+            grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) | 
+                cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} ' 
+        ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
+elif [[ $target_type == "full" ]]; then
+    echo "thar!"
+    grep $ref_selector "$prefix".original_path_names.txt >"$target".link_paths.to_extract.txt
+fi
 
 echo "Put it all together"
 cat <(cut -f 1 "$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv) \
-  "$prefix".link_paths.to_extract.txt \
+  "$target".link_paths.to_extract.txt \
   "$prefix".consensus_path_names.touched.txt |
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
 
