@@ -6,29 +6,42 @@ set -eo pipefail
 # brrrrrn-ing
 prefix=$1
 
-# Build graphs
-odgi build -g "$prefix".gfa -o "$prefix".og -t 16 -P
-odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16 -P
+echo "Build the graphs"
+if [[ ! -s "$prefix".og ]]; then
+  odgi build -g "$prefix".gfa -o "$prefix".og -t 16 -P
+fi
 
-# Take all path names
-odgi paths -i "$prefix".og -L >"$prefix".all_path_names.txt
+if [[ ! -s "$prefix".consensus@10000__y_0_1000000.og ]]; then
+  odgi build -g "$prefix".consensus@10000__y_0_1000000.gfa -o "$prefix".consensus@10000__y_0_1000000.og -t 16
+fi
 
-# Take consensus path names
-grep ^Cons "$prefix".all_path_names.txt >"$prefix".consensus_path_names.txt
+echo "Take all path names"
+if [[ ! -s "$prefix".all_path_names.txt ]]; then
+  odgi paths -i "$prefix".og -L >"$prefix".all_path_names.txt
+fi
 
-# Take original path names
-grep ^Cons -v "$prefix".all_path_names.txt >"$prefix".original_path_names.txt
+echo "Take consensus path names"
+if [[ ! -s "$prefix".consensus_path_names.txt ]]; then
+  grep ^Cons "$prefix".all_path_names.txt >"$prefix".consensus_path_names.txt
+fi
 
-# Calculate the depth
-odgi depth -i "$prefix".og -s "$prefix".original_path_names.txt -R "$prefix".consensus_path_names.txt -t 16 >"$prefix".consensus_path_names.depth.tsv
+echo "Take original path names"
+if [[ ! -s "$prefix".original_path_names.txt ]]; then
+  grep ^Cons -v "$prefix".all_path_names.txt >"$prefix".original_path_names.txt
+fi
 
-# Remove artifacts and dark matter
+echo "Calculate the depth"
+if [[ ! -s "$prefix".consensus_path_names.depth.tsv ]]; then
+  odgi depth -i "$prefix".og -s "$prefix".original_path_names.txt -R "$prefix".consensus_path_names.txt -t 16 >"$prefix".consensus_path_names.depth.tsv
+fi
+
+echo "Remove artifacts and dark matter"
 awk '$4 >= 10 && $4 <= 500' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.10_500.tsv
 
-# Take the paths touched by the references
+echo "Take the paths touched by the references"
 odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep chr8 "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
 
-# Take the link paths between consensus paths that we're saving
+echo "Take the link paths between consensus paths that we're saving"
 odgi paths -i "$prefix".consensus@10000__y_0_1000000.og -L >"$prefix".consensus@10000__y_0_1000000.path_names.txt
 
 grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | awk '{ print NR":"$0 }' |
@@ -39,15 +52,18 @@ grep ^Link "$prefix".consensus@10000__y_0_1000000.path_names.txt | awk '{ print 
   ) |
     cut -f 2 -d : >"$prefix".link_paths.to_extract.txt
 
-# Put it all together
+echo "Put it all together"
 cat <(cut -f 1 "$prefix".consensus_path_names.depth.10_500.tsv) \
   "$prefix".link_paths.to_extract.txt \
   "$prefix".consensus_path_names.touched.txt |
   sort | uniq | awk 'NF > 0' >"$prefix".consensus_path_names.to_extract.txt
 
-# Extract
+echo "Extract"
 odgi chop -i "$prefix".consensus@10000__y_0_1000000.og -o "$prefix".consensus@10000__y_0_1000000.chop100.og -c 100 -t 16
 odgi extract -i "$prefix".consensus@10000__y_0_1000000.chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$prefix".consensus@10000__y_0_1000000.brned.og
 
-# Get the GFA for Bandage
+echo "Get the GFA for Bandage"
 odgi view -i "$prefix".consensus@10000__y_0_1000000.brned.og -g >"$prefix".consensus@10000__y_0_1000000.brned.gfa
+
+echo "Bandage"
+Bandage image "$prefix".consensus@10000__y_0_1000000.brned.gfa "$prefix".consensus@10000__y_0_1000000.brned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
