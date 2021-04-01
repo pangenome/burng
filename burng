@@ -3,8 +3,9 @@
 # exit when any command fails
 set -eo pipefail
 
-# brrrrrn-ing
-#prefix=$1
+# Set locale
+LC_NUMERIC=en_US.UTF-8
+
 source_gfa=$1
 target_gfa=$2
 min_depth=$3
@@ -12,8 +13,8 @@ max_depth=$4
 ref_selector=$5
 target_type=$6
 
-prefix=$(basename $source_gfa .gfa)
-target=$(basename $target_gfa .gfa)
+prefix=$(basename "$source_gfa" .gfa)
+target=$(basename "$target_gfa" .gfa)
 
 echo "Build the graphs"
 if [[ ! -s "$prefix".og ]]; then
@@ -48,7 +49,7 @@ echo "Remove artifacts and dark matter"
 awk '$4 >= '$min_depth' && $4 <= '$max_depth'' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth.$min_depth\_$max_depth.tsv
 
 echo "Take the paths touched by the references"
-odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep $ref_selector "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
+odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep "$ref_selector" "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
 
 echo "Take the link paths between consensus paths that we're saving"
 odgi paths -i "$target".og -L >"$target".path_names.txt
