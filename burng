@@ -78,18 +78,18 @@ if [[ $target_type == "consensus" ]]; then
   if [[ ! -s "$target".chop100.og ]]; then
     odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t 16
   fi
-  odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".brned.og
+  odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".burned.og
 elif [[ $target_type == "full" ]]; then
-  odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o "$target".brned.og
+  odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o "$target".burned.og
 fi
 
 echo "Get the GFA for Bandage"
-odgi view -i "$target".brned.og -g >"$target".brned.gfa
+odgi view -i "$target".burned.og -g >"$target".burned.gfa
 
 #echo "Bandage"
-#Bandage image "$prefix".consensus@10000__y_0_1000000.brned.gfa "$prefix".consensus@10000__y_0_1000000.brned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
+#Bandage image "$prefix".consensus@10000__y_0_1000000.burned.gfa "$prefix".consensus@10000__y_0_1000000.burned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
 
-echo "Explode the brned target"
+echo "Explode the burned target"
 rm -rf bomb
 mkdir bomb
-odgi explode -i "$target".brned.og -p bomb/brned -t 16
+odgi explode -i "$target".burned.og -p bomb/burned -t 16
