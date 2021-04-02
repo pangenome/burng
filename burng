@@ -52,17 +52,19 @@ echo "Take the paths touched by the references"
 odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep "$ref_selector" "$prefix".original_path_names.txt) -t 16 | cut -f 4 >"$prefix".consensus_path_names.touched.txt
 
 echo "Take the link paths between consensus paths that we're saving"
-odgi paths -i "$target".og -L >"$target".path_names.txt
+if [[ ! -s "$target".path_names.txt ]]; then
+  odgi paths -i "$target".og -L >"$target".path_names.txt
+fi
 
 if [[ $target_type == "consensus" ]]; then
-    grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' | \
-        grep -f <(
-            cat "$prefix".consensus_path_names.touched.txt
-            grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".tsv) |
-                cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} ' 
-        ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
+  grep ^Link "$target".path_names.txt | awk '{ print NR":"$0 }' |
+    grep -f <(
+      cat "$prefix".consensus_path_names.touched.txt
+      grep ^Link "$target".path_names.txt | grep -n -o -Ff <(cut -f 1 "$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".tsv) |
+      cut -f 1 -d : | sort -n | uniq -c | awk '$1 == 2 { print "^"$2":"} '
+    ) | cut -f 2 -d : >"$target".link_paths.to_extract.txt
 elif [[ $target_type == "full" ]]; then
-    grep "$ref_selector" "$prefix".original_path_names.txt >"$target".link_paths.to_extract.txt
+  grep "$ref_selector" "$prefix".original_path_names.txt >"$target".link_paths.to_extract.txt
 fi
 
 echo "Put it all together"
@@ -73,12 +75,12 @@ cat <(cut -f 1 "$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".ts
 
 echo "Extract"
 if [[ $target_type == "consensus" ]]; then
-    if [[ ! -s "$target".chop100.og ]]; then
-        odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t 16
-    fi
-    odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".brned.og
+  if [[ ! -s "$target".chop100.og ]]; then
+    odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t 16
+  fi
+  odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o - | odgi unchop -i - -o "$target".brned.og
 elif [[ $target_type == "full" ]]; then
-    odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o "$target".brned.og
+  odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t 16 -o "$target".brned.og
 fi
 
 echo "Get the GFA for Bandage"
@@ -87,5 +89,7 @@ odgi view -i "$target".brned.og -g >"$target".brned.gfa
 #echo "Bandage"
 #Bandage image "$prefix".consensus@10000__y_0_1000000.brned.gfa "$prefix".consensus@10000__y_0_1000000.brned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
 
-echo "Explode"
-rm -rf bomb; mkdir bomb; odgi explode -i "$target".brned.og -p bomb/brned -t 16
+echo "Explode the brned target"
+rm -rf bomb
+mkdir bomb
+odgi explode -i "$target".brned.og -p bomb/brned -t 16
