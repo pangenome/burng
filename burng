@@ -84,6 +84,9 @@ elif [[ $target_type == "full" ]]; then
   odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t $threads -o "$target".burned.og
 fi
 
+echo "Burned target statistics"
+odgi stats -i "$target".burned.og -W | grep num
+
 echo "Get the GFA for Bandage"
 odgi view -i "$target".burned.og -g >"$target".burned.gfa
 
@@ -93,5 +96,5 @@ odgi view -i "$target".burned.og -g >"$target".burned.gfa
 #echo "Explode the burned target"
 #rm -rf bomb
 #mkdir bomb
-#odgi explode -i "$target".burned.og -p bomb/burned -t $threads
+#odgi explode -i "$target".burned.og -p bomb/burned -t $threads -P
 #ls -rthl bomb
