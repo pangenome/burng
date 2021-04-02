@@ -90,8 +90,8 @@ odgi view -i "$target".burned.og -g >"$target".burned.gfa
 #echo "Bandage"
 #Bandage image "$prefix".consensus@10000__y_0_1000000.burned.gfa "$prefix".consensus@10000__y_0_1000000.burned.Bandage.h2000nw500linear.png --height 2000 --nodewidth 500 --linear
 
-echo "Explode the burned target"
-rm -rf bomb
-mkdir bomb
-odgi explode -i "$target".burned.og -p bomb/burned -t $threads
-ls -rthl bomb
+#echo "Explode the burned target"
+#rm -rf bomb
+#mkdir bomb
+#odgi explode -i "$target".burned.og -p bomb/burned -t $threads
+#ls -rthl bomb
