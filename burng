@@ -19,11 +19,11 @@ target=$(basename "$target_gfa" .gfa)
 
 echo "Build the graphs"
 if [[ ! -s "$prefix".og ]]; then
-  odgi build -g "$prefix".gfa -o "$prefix".og -t $threads -P
+  odgi build -g "$prefix".gfa -o "$prefix".og -t "$threads" -P
 fi
 
 if [[ ! -s "$target".og ]]; then
-  odgi build -g "$target".gfa -o "$target".og -t $threads -P
+  odgi build -g "$target".gfa -o "$target".og -t "$threads" -P
 fi
 
 echo "Take all path names"
@@ -43,14 +43,14 @@ fi
 
 echo "Calculate the depth"
 if [[ ! -s "$prefix".consensus_path_names.depth.tsv ]]; then
-  odgi depth -i "$prefix".og -s "$prefix".original_path_names.txt -R "$prefix".consensus_path_names.txt -t $threads >"$prefix".consensus_path_names.depth.tsv
+  odgi depth -i "$prefix".og -s "$prefix".original_path_names.txt -R "$prefix".consensus_path_names.txt -t "$threads" >"$prefix".consensus_path_names.depth.tsv
 fi
 
 echo "Remove artifacts and dark matter"
 awk '$4 >= '"$min_depth"' && $4 <= '"$max_depth"'' "$prefix".consensus_path_names.depth.tsv >"$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".tsv
 
 echo "Take the paths touched by the references"
-odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep "$ref_selector" "$prefix".original_path_names.txt) -t $threads | cut -f 4 >"$prefix".consensus_path_names.touched.txt
+odgi overlap -i "$prefix".og -s "$prefix".consensus_path_names.txt -b <(grep "$ref_selector" "$prefix".original_path_names.txt) -t "$threads" | cut -f 4 >"$prefix".consensus_path_names.touched.txt
 
 echo "Take the link paths between consensus paths that we're saving"
 if [[ ! -s "$target".path_names.txt ]]; then
@@ -77,11 +77,11 @@ cat <(cut -f 1 "$prefix".consensus_path_names.depth."$min_depth"_"$max_depth".ts
 echo "Extract"
 if [[ $target_type == "consensus" ]]; then
   if [[ ! -s "$target".chop100.og ]]; then
-    odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t $threads
+    odgi chop -i "$target".og -o "$target".chop100.og -c 100 -t "$threads"
   fi
-  odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t $threads -o - | odgi unchop -i - -o "$target".burned.og
+  odgi extract -i "$target".chop100.og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t "$threads" -o - | odgi unchop -i - -o "$target".burned.og
 elif [[ $target_type == "full" ]]; then
-  odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t $threads -o "$target".burned.og
+  odgi extract -i "$target".og -b "$prefix".consensus_path_names.to_extract.txt -c 1 -t "$threads" -o "$target".burned.og
 fi
 
 echo "Burned target statistics"
@@ -96,5 +96,5 @@ odgi view -i "$target".burned.og -g >"$target".burned.gfa
 #echo "Explode the burned target"
 #rm -rf bomb
 #mkdir bomb
-#odgi explode -i "$target".burned.og -p bomb/burned -t $threads -P
+#odgi explode -i "$target".burned.og -p bomb/burned -t "$threads" -P
 #ls -rthl bomb
